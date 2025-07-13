@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # CONFIGURATION
 BASE_SENDER_EMAIL = "sarah-schneider@smce.eu"
 SENDER_NAME = "Techniker Kundenservice"
-SUBJECT = "Nur kurz zur Erinnerung {rand}"  # Use {rand} placeholder here
+SUBJECT = "Wichtig: Medicare Kit nur noch heute verfügbar! {rand}"  # Use {rand} placeholder here
 ATTACH_PDF = True
 PDF_FILE = "PDF_Informationen.pdf"
 USE_PLAIN_TEXT = True  # Send only plain text message from message.txt
