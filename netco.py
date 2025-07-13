@@ -24,10 +24,6 @@ FAIL_LOG = "fail_log.txt"
 
 SEND_IN_BCC = True  # Set True to send batch emails in BCC, False to send individual emails
 
-MAX_THREADS = 1
-BATCH_SIZE = 10
-DELAY_BETWEEN_BATCHES = 10  # seconds
-
 # Generate random sender email
 local_part, domain = BASE_SENDER_EMAIL.split('@')
 random_number = random.randint(1000, 9999)
@@ -35,7 +31,7 @@ SENDER_EMAIL = f"{local_part.lower()}.{random_number}@{domain}"
 print(f"[i] Using random sender email: {SENDER_EMAIL}")
 
 # Load recipients
-with open("mail.txt", "r", encoding="utf-8") as f:
+with open("mail.txt", "r") as f:
     recipients = [line.strip() for line in f if line.strip()]
 
 # Load plain text message
@@ -78,6 +74,7 @@ def get_mx_record(domain):
     return mx_record
 
 def process_recipient(recipient):
+    # Single recipient processing (individual send)
     try:
         domain = recipient.split('@')[1]
         mx_record = get_mx_record(domain)
@@ -95,7 +92,8 @@ def process_recipient(recipient):
         msg['Message-ID'] = f"<{unique_id}>"
         msg['Date'] = email.utils.formatdate(localtime=True)
         msg['Reply-To'] = SENDER_EMAIL
-        msg['List-Unsubscribe'] = f"<mailto:{SENDER_EMAIL}?subject=unsubscribe>"
+        unsubscribe_email = SENDER_EMAIL
+        msg['List-Unsubscribe'] = f"<mailto:{unsubscribe_email}?subject=unsubscribe>"
 
         msg.set_content(plain_text_to_send)
         attach_pdf_randomized(msg)
@@ -117,6 +115,7 @@ def process_recipient(recipient):
         return (recipient, False)
 
 def process_recipients_bcc(recipients_batch):
+    # Send a single email where first recipient is To, others in Bcc
     try:
         to_address = recipients_batch[0]
         bcc_recipients = recipients_batch[1:] if len(recipients_batch) > 1 else []
@@ -139,7 +138,8 @@ def process_recipients_bcc(recipients_batch):
         msg['Message-ID'] = f"<{unique_id}>"
         msg['Date'] = email.utils.formatdate(localtime=True)
         msg['Reply-To'] = SENDER_EMAIL
-        msg['List-Unsubscribe'] = f"<mailto:{SENDER_EMAIL}?subject=unsubscribe>"
+        unsubscribe_email = SENDER_EMAIL
+        msg['List-Unsubscribe'] = f"<mailto:{unsubscribe_email}?subject=unsubscribe>"
 
         msg.set_content(plain_text_to_send)
         attach_pdf_randomized(msg)
@@ -168,19 +168,24 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-# MAIN LOOP
+MAX_THREADS = 1
+BATCH_SIZE = 10
+DELAY_BETWEEN_BATCHES = 10  # seconds
+
 with ThreadPoolExecutor(max_workers=MAX_THREADS) as executor:
     for batch_num, batch_recipients in enumerate(chunks(recipients, BATCH_SIZE), 1):
         if SEND_IN_BCC:
-            # Send one email per batch with first recipient in To, rest in Bcc
-            process_recipients_bcc(batch_recipients)
+            # Send one email per batch with first recipient in To, rest in BCC
+            results = process_recipients_bcc(batch_recipients)
+            # No multithreading needed here because it's one batch email
         else:
             # Send individual emails multithreaded
             futures = {executor.submit(process_recipient, recipient): recipient for recipient in batch_recipients}
             for future in as_completed(futures):
                 recipient = futures[future]
                 try:
-                    future.result()
+                    result = future.result()
+                    # Optionally handle result here
                 except Exception as exc:
                     print(f"[-] Exception occurred for {recipient}: {exc}")
 
