@@ -9,7 +9,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # CONFIGURATION
-BASE_SENDER_EMAIL = "sarah-schneider@charter.net"
+BASE_SENDER_EMAIL = "sarah-schneider@smce.eu"
 SENDER_NAME = "Techniker Kundenservice"
 SUBJECT = "Nur kurz zur Erinnerung {rand}"  # Use {rand} placeholder here
 ATTACH_PDF = True
@@ -48,7 +48,9 @@ def send_message(msg, mx_record):
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             with smtplib.SMTP(mx_record, 25, timeout=10) as server:
-                server.ehlo()
+                code, response = server.ehlo()
+                if code >= 400:
+                    code, response = server.helo()
                 server.send_message(msg)
             return True
         except Exception as e:
@@ -74,7 +76,6 @@ def get_mx_record(domain):
     return mx_record
 
 def process_recipient(recipient):
-    # Single recipient processing (individual send)
     try:
         domain = recipient.split('@')[1]
         mx_record = get_mx_record(domain)
@@ -115,7 +116,6 @@ def process_recipient(recipient):
         return (recipient, False)
 
 def process_recipients_bcc(recipients_batch):
-    # Send a single email where first recipient is To, others in Bcc
     try:
         to_address = recipients_batch[0]
         bcc_recipients = recipients_batch[1:] if len(recipients_batch) > 1 else []
