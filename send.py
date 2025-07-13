@@ -9,7 +9,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # CONFIGURATION
-BASE_SENDER_EMAIL = "sarah-schneider@smce.eu"
+BASE_SENDER_EMAIL = "sarah-schneider@charter.net"
 SENDER_NAME = "Techniker Kundenservice"
 SUBJECT = "Nur kurz zur Erinnerung {rand}"  # Use {rand} placeholder here
 ATTACH_PDF = True
