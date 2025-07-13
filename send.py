@@ -69,7 +69,7 @@ def attach_pdf_randomized(msg):
         print("[!] PDF file not found or attachment disabled")
 
 def get_mx_record(domain):
-    answers = dns.resolver.resolve(domain, 'MX')
+    answers = dns.resolver.query(domain, 'MX')
     mx_record = sorted([(r.preference, r.exchange.to_text()) for r in answers])[0][1]
     return mx_record
 
