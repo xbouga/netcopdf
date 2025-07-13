@@ -45,12 +45,13 @@ def log_message(filename, message):
         f.write(message + "\n")
 
 def send_message(msg, mx_record):
+    sender_domain = SENDER_EMAIL.split('@')[1]
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             with smtplib.SMTP(mx_record, 25, timeout=10) as server:
-                code, response = server.ehlo()
+                code, response = server.ehlo(sender_domain)
                 if code >= 400:
-                    code, response = server.helo()
+                    code, response = server.helo(sender_domain)
                 server.send_message(msg)
             return True
         except Exception as e:
